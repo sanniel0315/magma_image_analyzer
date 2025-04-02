@@ -1,0 +1,5 @@
+torch>=2.0.0
+gradio>=3.50.2
+transformers @ git+https://github.com/jwyang/transformers.git@dev/jwyang-v4.48.2
+pillow>=9.0.0
+open-clip-torch>=2.0.0
