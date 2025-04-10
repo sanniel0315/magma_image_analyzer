@@ -27,18 +27,18 @@ class MagmaAnalyzer:
         self.model = self.model.to(self.device)
         print("模型初始化完成")
     
-    def analyze_image(self, image, prompt_text="请用繁体中文描述这张图片", max_tokens=512):
+    def analyze_image(self, image, prompt_text="请用繁体中文描述這張圖片", max_tokens=512):
         """分析图像并返回结果"""
         if image is None:
-            return "请上传图片"
+            return "请上傳圖片"
         
         # 确保图像是RGB模式
         image = image.convert("RGB")
         
         # 使用繁体中文的对话格式
         convs = [
-            {"role": "system", "content": "你是一个能看、能说的智能助手。请务必只使用繁体中文回答所有问题。"},
-            {"role": "user", "content": f"<image_start><image><image_end>\n{prompt_text}，请务必使用繁体中文回答。"},
+            {"role": "system", "content": "你是一个能看、能说的智能助手。请務必只使用繁体中文回答所有問题。"},
+            {"role": "user", "content": f"<image_start><image><image_end>\n{prompt_text}，務必使用繁体中文回答。"},
         ]
         prompt = self.processor.tokenizer.apply_chat_template(convs, tokenize=False, add_generation_prompt=True)
         
@@ -46,10 +46,24 @@ class MagmaAnalyzer:
         inputs = self.processor(images=[image], texts=prompt, return_tensors="pt")
         
         # 修正数据类型
+        if 'pixel_values' in inputs:
+        # 确保维度正确
+            if inputs['pixel_values'].dim() == 4:  # 如果维度是[batch, channels, height, width]
+                inputs['pixel_values'] = inputs['pixel_values'].unsqueeze(0)  # 添加一个维度
+        
+        if 'image_sizes' in inputs:
+        # 确保是整数类型
+            inputs['image_sizes'] = inputs['image_sizes'].long()
+            
+        # 确保维度正确
+        if inputs['image_sizes'].dim() == 2:  # 如果维度是[batch, 2]
+            inputs['image_sizes'] = inputs['image_sizes'].unsqueeze(0)  # 变成[1, batch, 2]
+    
+        # 修正数据类型
         for key in ['input_ids', 'attention_mask']:
             if key in inputs:
                 inputs[key] = inputs[key].long()
-        
+    
         # 移动到设备
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
         
